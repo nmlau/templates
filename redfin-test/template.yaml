@@ -1,9 +1,9 @@
 apiVersion: backstage.io/v1beta2
 kind: Template
 metadata:
-  name: v1beta2-demo
-  title: Test Action template
-  description: scaffolder v1beta2 template demo publishing to github
+  name: redfin-test
+  title: Redfin test template
+  description: redfin test for timber
 spec:
   owner: backstage/techdocs-core
   type: service
