@@ -2,8 +2,8 @@ apiVersion: backstage.io/v1beta2
 kind: Template
 metadata:
   name: redfin-test
-  title: Redfin test template
-  description: redfin test for timber
+  title: Redfin test template (hello are you updating)
+  description: redfin test for timber (hello are you updating)
 spec:
   owner: backstage/techdocs-core
   type: service
@@ -26,7 +26,7 @@ spec:
         name:
           title: Name
           type: string
-          description: Unique name of the component
+          description: Unique name of the component (hello are you updating)
           ui:autofocus: true
           ui:options:
             rows: 5
