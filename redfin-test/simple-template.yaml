@@ -1,0 +1,144 @@
+apiVersion: backstage.io/v1beta2
+kind: Template
+metadata:
+  name: redfin-test-simple-1
+  title: Redfin test template (simple version)
+  description: redfin test for timber (simple version)
+spec:
+  owner: backstage/techdocs-core
+  type: service
+
+  parameters:
+    - title: Fill in some steps
+      required:
+        - repoUrl
+        - name
+        - owner
+        - system
+        - app_id
+        - owning_team
+        - creator_email
+        - slack_channel
+        - description
+        - artifact_id
+        - group_id
+        - jenkins_project_name
+        - db_entity_name
+      properties:
+        repoUrl:
+          title: RepoUrl
+          type: string
+          description: RepoUrl (temp because picker isn't working)
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+          ui:options:
+            rows: 5
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the component
+        system:
+          title: System
+          type: string
+          description: System of the component
+          ui:field: EntityPicker
+          ui:options:
+            allowedKinds:
+              - System
+            defaultKind: System
+        app_id:
+          title: App Id
+          type: string
+          description: The canonical application id for your service. Must be globally unique, lowercase alphanumeric (or -), kebab-case, and not begin or end with a number.
+        owning_team:
+          title: Owning Team
+          type: string
+          description: The team that owns this service. Must be kebab-case. If your team owns more than one application, please use the same value across all applications
+        creator_email:
+          title: Creator Email
+          type: string
+          description: Your redfin email address, will become the first owner in the helm chart
+        slack_channel:
+          title: Slack Channel
+          type: string
+          description: Slack channel for alerts. Must begin with '#
+        description:
+          title: Description
+          type: string
+          description: A human-readable description of what this service does
+        artifact_id:
+          title: Artifact Id
+          type: string
+          description: The name of the service artifact/gradle project.
+        group_id:
+          title: Group Id
+          type: string
+          description: The default java package name and gradle group id. Strongly recommend keeping the “com.redfin.” prefix.
+        jenkins_project_name:
+          title: Jenkins Project Name
+          type: string
+          description: For the helm chart and pipeline. Must be a lowercase version version of the job name for your Bitbucket project defined here with _project appended to it. For example the “Application Framework” project becomes application_framework_project
+        db_entity_name:
+          title: Db Entity Name
+          type: string
+          description: The name of the Hibernate entity classes to stub out. Must be a valid java class name
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:cookiecutter
+      input:
+        url: ./template
+        values:
+          name: '{{ parameters.name }}'
+          owner: '{{ parameters.owner }}'         
+          system: '{{ parameters.system }}'
+          destination: '{{ parseRepoUrl parameters.repoUrl }}'
+
+    - id: fetch-docs
+      name: Fetch Docs
+      action: fetch:cookiecutter
+      input:
+        targetPath: ./
+        url: https://stash.redfin.com/projects/AF/repos/template-app-timber-backstage/browse
+        values:
+          app_id: '{{ parameters.app_id }}'
+          owning_team: '{{ parameters.owning_team }}'
+          creator_email: '{{ parameters.creator_email }}'
+          slack_channel: '{{ parameters.slack_channel }}'
+          description: '{{ parameters.description }}'
+          artifact_id: '{{ parameters.artifact_id }}'
+          group_id: '{{ parameters.group_id }}'
+          jenkins_project_name: '{{ parameters.jenkins_project_name }}'
+          db_entity_name: '{{ parameters.db_entity_name }}'
+
+    - id: publish
+      if: '{{ not parameters.dryRun }}'
+      name: Publish
+      action: publish:bitbucket
+      input:
+        allowedHosts: ['redfin.com']
+        description: 'This is {{ parameters.name }}'
+        repoUrl: '{{ parameters.repoUrl }}'
+
+    - id: register
+      if: '{{ not parameters.dryRun }}'
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: '{{ steps.publish.output.repoContentsUrl }}'
+        catalogInfoPath: '/catalog-info.yaml'
+
+    - name: Results
+      if: '{{ parameters.dryRun }}'
+      action: debug:log
+      input:
+        listWorkspace: true
+
+  output:
+    links:
+      - title: Repository
+        url: '{{ steps.publish.output.remoteUrl }}'
